@@ -1,6 +1,9 @@
 # ✅Simple Todo-Web-App-- Documentation
 This is a Todo Web App designed to help users manage their tasks efficiently. The app provides various features to organize tasks, including adding tasks, marking them as completed or pending, editing existing tasks, filtering tasks by different criteria, and utilizing a calendar for scheduling tasks.
 
+
+🥺Desktop mode is needed for better performance in mobile phones. 
+
 ## 1. 👀Introduction
 Welcome to the documentation for the Simple Task Manager, a straightforward and improved project designed to efficiently manage your tasks. This document offers an overview of the project, its structural organization, enhancements, deployment details, and usage instructions.
 
