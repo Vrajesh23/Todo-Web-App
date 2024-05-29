@@ -1,17 +1,6 @@
 # ✅Simple Todo-Web-App-- Documentation
 This is a Todo Web App designed to help users manage their tasks efficiently. The app provides various features to organize tasks, including adding tasks, marking them as completed or pending, editing existing tasks, filtering tasks by different criteria, and utilizing a calendar for scheduling tasks.
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Project Overview](#project-overview)
-3. [Getting Started](#getting-started)
-4. [Code Structure](#code-structure)
-5. [Dependencies](#dependencies)
-6. [Code Refactoring](#code-refactoring)
-7. [Deployment](#deployment)
-8. [Usage](#usage)
-9. [License](#license)
-
 ## 1. Introduction
 Welcome to the documentation for the Simple Task Manager, a straightforward and improved project designed to efficiently manage your tasks. This document offers an overview of the project, its structural organization, enhancements, deployment details, and usage instructions.
 
@@ -28,10 +17,9 @@ Ensure you have the following:
 - An internet connection (for fetching external dependencies)
 
 ### Installation
-## 1. Clone the Repository: git clone git@github.com
-/todo-app.git
+## 1. Clone the Repository.
 
-## 2. Navigate to the Project Directory: cd /todo-app.git
+## 2. Navigate to the Project Directory.
    
 ## 3. Open index.html in a Browser:
 Open the `index.html` file in your preferred web browser.
