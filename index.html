@@ -51,16 +51,13 @@
         <div class="todos-filter">
             <div class="dropdown">
                 <label tabindex="0" class="btn m-1">Filter</label>
-                <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-                    <li onclick="filterTodos('all')">
-                        <a><i class="bx bx-list-ul mr-2"></i>All</a>
-                    </li>
-                    <li onclick="filterTodos('pending')">
-                        <a><i class="bx bx-time mr-2"></i>Pending</a>
-                    </li>
-                    <li onclick="filterTodos('completed')">
-                        <a><i class="bx bx-check mr-2"></i>Completed</a>
-                    </li>
+
+
+
+<ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                    <li onclick="filterTodos('all')"><a>All</a></li>
+                    <li onclick="filterTodos('pending')"><a>Pending</a></li>
+                    <li onclick="filterTodos('completed')"><a>Completed</a></li>
                 </ul>
             </div>
             <button class="btn btn-secondary delete-all-btn">
