@@ -1,109 +1,307 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="night">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// Abstract class for TodoItemFormatter
+class TodoItemFormatter {
+  formatTask(task) {
+    return task.length > 14 ? task.slice(0, 14) + "..." : task;
+  }
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/style.css">
+  formatDueDate(dueDate) {
+    return dueDate || "No due date";
+  }
 
-    <!--- Tailwind CSS & Daisy UI CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@2.18.0/dist/full.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet" type="text/css" />
-    <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+  formatStatus(completed) {
+    return completed ? "Completed" : "Pending";
+  }
+}
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="res/V Letter.png">
+// Class responsible for managing Todo items
+class TodoManager {
+  constructor(todoItemFormatter) {
+    this.todos = JSON.parse(localStorage.getItem("todos")) || [];
+    this.todoItemFormatter = todoItemFormatter;
+  }
 
-    <!-- Sound Effects -->
-    <audio id="addSound" src="res/1.wav"></audio>
-    <audio id="deleteSound" src="res/2.wav"></audio>
-    <audio id="completeSound" src="res/3.wav"></audio>
+  addTodo(task, dueDate) {
+    const newTodo = {
+      id: this.getRandomId(),
+      task: this.todoItemFormatter.formatTask(task),
+      dueDate: this.todoItemFormatter.formatDueDate(dueDate),
+      completed: false,
+      status: "pending",
+    };
+    this.todos.push(newTodo);
+    this.saveToLocalStorage();
+    return newTodo;
+  }
 
-    <title>TO-DOIT</title>
-</head>
-<body>
+  editTodo(id, updatedTask) {
+    const todo = this.todos.find((t) => t.id === id);
+    if (todo) {
+      todo.task = updatedTask;
+      this.saveToLocalStorage();
+    }
+    return todo;
+  }
 
-  <!-- Copyright -->
-  <footer>
-    <div class="author-text">
-        <p>Made with ❤️ by <a href="https://github.com/Vrajesh23" target="_blank"><b>Vrajesh Thaker</b></a></p>
-    </div>
-</footer>
+  deleteTodo(id) {
+    this.todos = this.todos.filter((todo) => todo.id !== id);
+    this.saveToLocalStorage();
+    // Trigger delete sound effect
+    playSound("deleteSound");
+  }
 
+  toggleTodoStatus(id) {
+    const todo = this.todos.find((t) => t.id === id);
+    if (todo) {
+      todo.completed = !todo.completed;
+      this.saveToLocalStorage();
+      // Trigger complete sound effect
+      playSound("completeSound");
+    }
+  }
 
-    <!-- Container for Todo List -->
-    <div class="container">
-        <header>
-            <h1>Todo List</h1>
-            <!-- Error message -->
-            <div class="alert-message"></div>
-            <div class="input-section">
-                <input type="text" placeholder="Add a todo . . ." class="input input-bordered input-secondary w-full max-w-xs" />
-                <input type="date" class="input input-bordered input-secondary w-full max-w-xs schedule-date" />
-                <button class="btn btn-secondary add-task-button">
-                    <i class="bx bx-plus bx-sm"></i>
-                </button>
-            </div>
-        </header>
+  clearAllTodos() {
+    if (this.todos.length > 0) {
+      this.todos = [];
+      this.saveToLocalStorage();
+    }
+  }
 
-        <div class="todos-filter">
-            <div class="dropdown">
-                <label tabindex="0" class="btn m-1">Filter</label>
+  filterTodos(status) {
+    switch (status) {
+      case "all":
+        return this.todos;
+      case "pending":
+        return this.todos.filter((todo) => !todo.completed);
+      case "completed":
+        return this.todos.filter((todo) => todo.completed);
+      default:
+        return [];
+    }
+  }
 
+  getRandomId() {
+    return (
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15)
+    );
+  }
 
+  saveToLocalStorage() {
+    localStorage.setItem("todos", JSON.stringify(this.todos));
+  }
+}
 
-<ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-                    <li onclick="filterTodos('all')"><a>All</a></li>
-                    <li onclick="filterTodos('pending')"><a>Pending</a></li>
-                    <li onclick="filterTodos('completed')"><a>Completed</a></li>
-                </ul>
-            </div>
-            <button class="btn btn-secondary delete-all-btn">
-                Delete All
+// Class responsible for managing the UI and handling events
+class UIManager {
+  constructor(todoManager, todoItemFormatter) {
+    this.todoManager = todoManager;
+    this.todoItemFormatter = todoItemFormatter;
+    this.taskInput = document.querySelector("input");
+    this.dateInput = document.querySelector(".schedule-date");
+    this.addBtn = document.querySelector(".add-task-button");
+    this.todosListBody = document.querySelector(".todos-list-body");
+    this.alertMessage = document.querySelector(".alert-message");
+    this.deleteAllBtn = document.querySelector(".delete-all-btn");
+
+    this.addEventListeners();
+    this.showAllTodos();
+  }
+
+  addEventListeners() {
+    // Event listener for adding a new todo
+    this.addBtn.addEventListener("click", () => {
+      this.handleAddTodo();
+    });
+
+    // Event listener for pressing Enter key in the task input
+    this.taskInput.addEventListener("keyup", (e) => {
+      if (e.keyCode === 13 && this.taskInput.value.length > 0) {
+        this.handleAddTodo();
+      }
+    });
+
+    // Event listener for deleting all todos
+    this.deleteAllBtn.addEventListener("click", () => {
+      this.handleClearAllTodos();
+    });
+
+  // Event listeners for filter buttons
+  const filterButtons = document.querySelectorAll(".todos-filter li");
+  filterButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+          const status = button.textContent.toLowerCase();
+          this.handleFilterTodos(status);
+      });
+  });
+  }
+
+  handleAddTodo() {
+    const task = this.taskInput.value;
+    const dueDate = this.dateInput.value;
+    if (task === "") {
+      this.showAlertMessage("Please enter a task", "error");
+    } else {
+      const newTodo = this.todoManager.addTodo(task, dueDate);
+      this.showAllTodos();
+      this.taskInput.value = "";
+      this.dateInput.value = "";
+      this.showAlertMessage("Task added successfully", "success");
+      // Trigger add sound effect
+      playSound("addSound");
+    }
+  }
+
+  handleClearAllTodos() {
+    this.todoManager.clearAllTodos();
+    this.showAllTodos();
+    this.showAlertMessage("All todos cleared successfully", "success");
+  }
+
+  showAllTodos() {
+    const todos = this.todoManager.filterTodos("all");
+    this.displayTodos(todos);
+  }
+
+  displayTodos(todos) {
+    this.todosListBody.innerHTML = "";
+
+    if (todos.length === 0) {
+      this.todosListBody.innerHTML = `<tr><td colspan="5" class="text-center">No task found</td></tr>`;
+      return;
+    }
+
+    todos.forEach((todo) => {
+      this.todosListBody.innerHTML += `
+        <tr class="todo-item" data-id="${todo.id}">
+          <td>${this.todoItemFormatter.formatTask(todo.task)}</td>
+          <td>${this.todoItemFormatter.formatDueDate(todo.dueDate)}</td>
+          <td>${this.todoItemFormatter.formatStatus(todo.completed)}</td>
+          <td>
+            <button class="btn btn-warning btn-sm" onclick="uiManager.handleEditTodo('${todo.id}')">
+              <i class="bx bx-edit-alt bx-bx-xs"></i>    
             </button>
+            <button class="btn btn-success btn-sm" onclick="uiManager.handleToggleStatus('${todo.id}')">
+              <i class="bx bx-check bx-xs"></i>
+            </button>
+            <button class="btn btn-error btn-sm" onclick="uiManager.handleDeleteTodo('${todo.id}')">
+              <i class="bx bx-trash bx-xs"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  handleEditTodo(id) {
+    const todo = this.todoManager.todos.find((t) => t.id === id);
+    if (todo) {
+      this.taskInput.value = todo.task;
+      this.todoManager.deleteTodo(id);
+
+      const handleUpdate = () => {
+        this.addBtn.innerHTML = "<i class='bx bx-plus bx-sm'></i>";
+        this.showAlertMessage("Todo updated successfully", "success");
+        this.showAllTodos();
+        this.addBtn.removeEventListener("click", handleUpdate);
+      };
+
+      this.addBtn.innerHTML = "<i class='bx bx-check bx-sm'></i>";
+      this.addBtn.addEventListener("click", handleUpdate);
+    }
+  }
+
+  handleToggleStatus(id) {
+    this.todoManager.toggleTodoStatus(id);
+    this.showAllTodos();
+  }
+
+  handleDeleteTodo(id) {
+    this.todoManager.deleteTodo(id);
+    this.showAllTodos();
+  }
+
+  handleFilterTodos(status) {
+    const filteredTodos = this.todoManager.filterTodos(status);
+    this.displayTodos(filteredTodos);
+  }
+
+  highlightFilterButton(activeButton) {
+    const filterButtons = document.querySelectorAll(".todos-filter li");
+    filterButtons.forEach((button) => {
+      button.classList.remove("active");
+    });
+    activeButton.classList.add("active");
+  }
+
+  showAlertMessage(message, type) {
+    const alertBox = `
+      <div class="alert alert-${type} shadow-lg mb-5 w-full">
+        <div>
+          <span>${message}</span>
         </div>
+      </div>
+    `;
+    this.alertMessage.innerHTML = alertBox;
+    this.alertMessage.classList.remove("hide");
+    this.alertMessage.classList.add("show");
+    setTimeout(() => {
+      this.alertMessage.classList.remove("show");
+      this.alertMessage.classList.add("hide");
+    }, 3000);
+  }
+}
 
-        <table class="table w-full">
-            <thead>
-                <tr>
-                    <th>Task</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody class="todos-list-body">
-            </tbody>
-        </table>
-    </div>
+// Class responsible for managing the theme switcher
+class ThemeSwitcher {
+  constructor(themes, html) {
+    this.themes = themes;
+    this.html = html;
+    this.init();
+  }
 
-    <!--Theme switcher-->
-    <div class="theme-switcher">
-        <div class="dropdown dropdown-left">
-            <label tabindex="0" class="btn m-1">
-                <i class='bx bxs-palette bx-sm'></i>
-            </label>
-            <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-                <li class="theme-item" theme="cupcake"><a><img src="res/icons/cupcake.svg" style="width: 20px; height: 20px;"> Cupcake</a></li>
-                <li class="theme-item" theme="dark"><a><img src="res/icons/dark-mode.svg" style="width: 20px; height: 20px;"> Dark</a></li>
-                <li class="theme-item" theme="light"><a><img src="res/icons/day.svg" style="width: 20px; height: 20px;"> Light</a></li>
-                <li class="theme-item" theme="bumblebee"><a><img src="res/icons/honeybee.svg" style="width: 20px; height: 20px;"> Bumblebee</a></li>
-                <li class="theme-item" theme="synthwave"><a><img src="res/icons/sea.svg" style="width: 20px; height: 20px;"> Synthwave</a></li>
-                <li class="theme-item" theme="halloween"><a><img src="res/icons/pumpkin.svg" style="width: 20px; height: 20px;"> Halloween</a></li>
-                <li class="theme-item" theme="fantasy"><a><img src="res/icons/fantasy.svg" style="width: 20px; height: 20px;"> Fantasy</a></li>
-                <li class="theme-item" theme="dracula"><a><img src="res/icons/dragon-boat-festival.svg" style="width: 20px; height: 20px;"> Dracula</a></li>
-                <li class="theme-item" theme="aqua"><a><img src="res/icons/water.svg" style="width: 20px; height: 20px;"> Aqua</a></li>
-                <li class="theme-item" theme="luxury"><a><img src="res/icons/high-value.svg" style="width: 20px; height: 20px;"> Luxury</a></li>
-                <li class="theme-item" theme="night"><a><img src="res/icons/half-moon.svg" style="width: 20px; height: 20px;"> Night</a></li>
-            </ul>
-            
-            
-        </div>
-    </div>
+  init() {
+    const theme = this.getThemeFromLocalStorage();
+    if (theme) {
+      this.setTheme(theme);
+    }
 
-    <!-- JavaScript -->
-    <script src="js/main.js"></script>
-</body>
-</html>
+    this.addThemeEventListeners();
+  }
+
+  addThemeEventListeners() {
+    this.themes.forEach((theme) => {
+      theme.addEventListener("click", () => {
+        const themeName = theme.getAttribute("theme");
+        this.setTheme(themeName);
+        this.saveThemeToLocalStorage(themeName);
+      });
+    });
+  }
+
+  setTheme(themeName) {
+    this.html.setAttribute("data-theme", themeName);
+  }
+
+  saveThemeToLocalStorage(themeName) {
+    localStorage.setItem("theme", themeName);
+  }
+
+  getThemeFromLocalStorage() {
+    return localStorage.getItem("theme");
+  }
+}
+
+// Function to play sound effects
+function playSound(soundId) {
+  const sound = document.getElementById(soundId);
+  sound.play();
+}
+
+// Initialize TodoManager, UIManager, and ThemeSwitcher
+const todoItemFormatter = new TodoItemFormatter();
+const todoManager = new TodoManager(todoItemFormatter);
+const uiManager = new UIManager(todoManager, todoItemFormatter);
+const themeSwitcher = new ThemeSwitcher(
+  document.querySelectorAll(".theme-item"),
+  document.documentElement
+);
